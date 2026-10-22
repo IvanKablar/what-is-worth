@@ -1,0 +1,17 @@
+[project]
+name = "what-is-worth"
+version = "0.1.0"
+description = "What AI coding agents cost, per reset window"
+requires-python = ">=3.11"
+license = "MIT"
+dependencies = []
+
+[project.scripts]
+wiw = "whatisworth.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
