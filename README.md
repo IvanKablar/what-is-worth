@@ -4,6 +4,8 @@
 
 What is Worth? shows how much API value your AI coding agents consume. Its focus is not the calendar month but the subscription window, from one weekly reset to the next. For every account it also measures what one percentage point of the weekly quota is worth in dollars.
 
+Costs are always calculated from tokens: the token counts of every API response, valued at API list prices. The usage percentage that Claude Code reports is only used to compare that value with the subscription.
+
 Claude Code is supported today. Further agents can be added as adapters. Everything runs locally: no account, no proxy, no data sent anywhere. The only network request downloads the LiteLLM price list once a day.
 
 ## Features

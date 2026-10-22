@@ -4,6 +4,8 @@
 
 What is Worth? muestra cuánto valor de API consumen tus agentes de programación con IA. El centro no es el mes natural, sino el periodo de la suscripción, de un reinicio semanal al siguiente. Para cada cuenta mide además cuántos dólares vale un punto porcentual de la cuota semanal.
 
+Los costes se calculan siempre a partir de tokens: los tokens de cada respuesta de la API, valorados a precio de lista de la API. El porcentaje de uso que informa Claude Code solo sirve para comparar ese valor con la suscripción.
+
 Hoy se admite Claude Code. Otros agentes se pueden añadir como adaptadores. Todo funciona en local: sin cuenta, sin proxy y sin enviar datos. La única conexión de red descarga una vez al día la lista de precios de LiteLLM.
 
 ## Funciones

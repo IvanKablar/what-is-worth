@@ -4,6 +4,8 @@
 
 What is Worth? zeigt, was KI-Coding-Agenten an API-Gegenwert verbrauchen. Im Mittelpunkt steht nicht der Kalendermonat, sondern das Abo-Fenster von Wochenreset zu Wochenreset. Für jedes Konto wird außerdem gemessen, wie viele Dollar ein Prozentpunkt des Wochenkontingents wert ist.
 
+Gerechnet wird immer über Tokens: Grundlage sind die Token-Zahlen jeder API-Antwort, bewertet zu API-Listenpreisen. Die Auslastung in Prozent, die Claude Code meldet, dient nur dem Vergleich dieses Werts mit dem Abo.
+
 Unterstützt wird zurzeit Claude Code. Weitere Agenten lassen sich als Adapter ergänzen. Alles läuft lokal: Es gibt kein Konto und keinen Proxy, und es werden keine Daten verschickt. Die einzige Netzwerkverbindung lädt einmal täglich die Preisliste von LiteLLM.
 
 ## Was es kann
