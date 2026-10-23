@@ -11,7 +11,7 @@ Unterstützt wird zurzeit Claude Code. Weitere Agenten lassen sich als Adapter e
 ## Was es kann
 
 - **Übersicht seit dem Wochenreset** für das angemeldete Konto: Auslastung, API-Wert, Wert je Prozentpunkt, Tempo und Prognose, wann das Limit erreicht ist.
-- **Aufschlüsselung** nach Tag, Modell und Projekt. Projekt ist das Git-Repository. Worktrees und Unterordner zählen zu ihrem Hauptrepository.
+- **Aufschlüsselung** nach Tag, Modell und Projekt. Projekt ist das Git-Repository. Worktrees und Unterordner zählen zu ihrem Hauptrepository. Die Projekte umfassen alle Konten im Fenster.
 - **Alle Konten in einer Tabelle**, jeweils im eigenen Wochenfenster mit eigenem Reset-Zeitpunkt.
 - **Abopreis gegen API-Wert:** der Listenpreis jedes Plans pro Woche und ein Faktor aus API-Wert je Prozentpunkt geteilt durch das, was ein Prozentpunkt im Abo kostet.
 - **Gesamtkosten aller Konten:** heute, diese Woche, dieser Monat und insgesamt seit Beginn der Historie.
@@ -72,6 +72,7 @@ Claude Code löscht Transkripte standardmäßig nach 30 Tagen. Wer die Historie 
 | `wiw` | Übersicht seit dem letzten Wochenreset, gleich wie `wiw overview` |
 | `wiw overview --weeks 10` | Übersicht mit zehn früheren Wochen |
 | `wiw report day` | Kosten pro Tag, ebenso `week` und `month`, optional mit `--since 2026-09-01` |
+| `wiw report project` | Kosten pro Projekt über die ganze Historie, optional mit `--since` |
 | `wiw sync` | neue Daten einlesen, läuft sonst automatisch |
 | `wiw sync --rebuild` | vorhandene Transkripte neu einlesen, etwa nach geänderten Leseregeln |
 | `wiw reprice` | alle Kosten mit der aktuellen Preisliste neu berechnen |
@@ -105,6 +106,16 @@ Eigene Preise, etwa für ein Modell, das LiteLLM noch nicht kennt, kommen in `~/
 ```
 
 Danach `wiw reprice` ausführen.
+
+Ordner, die Git nicht mehr auflösen kann, etwa gelöschte Worktrees, lassen sich in `~/.config/what-is-worth/projects.json` einem Projekt zuordnen. Schlüssel sind Glob-Muster für den Ordner, Unterordner werden mit erfasst:
+
+```json
+{
+  "~/code/my-app-*": "my-app"
+}
+```
+
+Regeln wirken sofort auf die ganze Historie. Sie greifen nur, wenn Git den Ordner nicht zuordnen kann. Nötig sind sie meist nur für die Zeit vor der Installation: Seitdem merkt sich What is Worth? die Zuordnung, solange der Worktree noch existiert.
 
 ## Wie gerechnet wird
 
@@ -140,7 +151,7 @@ Alle Beträge sind API-Gegenwerte zu Listenpreisen. Auf einem Pro- oder Max-Abo 
 - **Konten erst ab Installation.** Die Transkripte enthalten das Konto nicht. Kosten vor der ersten Statusline-Aktualisierung erscheinen als „nicht zuordenbar“.
 - **Kontowechsel ohne Statusline.** Wer nach einem Login nur `claude -p` oder die IDE nutzt, dessen Wechsel wird erst bei der nächsten Aktualisierung einer Terminal-Statusline erkannt.
 - **Abgelehnte Erstversuche.** Lehnt ein Modell vor jeder Ausgabe ab und antwortet ein anderes, wird der Fallback korrekt bepreist. Ob der abgelehnte Versuch kostet, hängt von seiner Kategorie ab. Die steht nicht im Transkript, und der Versuch wird nicht mitgerechnet.
-- **Gelöschte Worktrees.** Worktrees, die schon vor dem ersten Einlesen gelöscht waren, lassen sich keinem Repository zuordnen und erscheinen unter ihrem Ordnernamen.
+- **Gelöschte Worktrees.** Worktrees, die schon vor dem ersten Einlesen gelöscht waren, lassen sich keinem Repository zuordnen und erscheinen unter ihrem Ordnernamen, es sei denn, eine Regel in `projects.json` ordnet sie zu. Gelöschte Unterordner eines bekannten Repositorys zählen weiter zu diesem.
 - **Ein Rechner.** Jeder Rechner führt sein eigenes Datenbuch.
 
 ## Aufbau

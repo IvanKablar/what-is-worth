@@ -11,7 +11,7 @@ Claude Code is supported today. Further agents can be added as adapters. Everyth
 ## Features
 
 - **Overview since the weekly reset** for the signed-in account: usage, API value, value per percentage point, pace, and when the limit will be reached.
-- **Breakdown** by day, model and project. A project is a git repository. Worktrees and subdirectories count towards their main repository.
+- **Breakdown** by day, model and project. A project is a git repository. Worktrees and subdirectories count towards their main repository. The projects cover all accounts in the window.
 - **All accounts in one table**, each in its own weekly window with its own reset time.
 - **Plan cost against API value:** each plan's list price per week, and a factor of API value per percentage point over what one percentage point costs on the plan.
 - **Totals for all accounts:** today, this week, this month and all time.
@@ -72,6 +72,7 @@ By default Claude Code deletes transcripts after 30 days. To keep your history, 
 | `wiw` | overview since the last weekly reset, same as `wiw overview` |
 | `wiw overview --weeks 10` | overview with ten earlier weeks |
 | `wiw report day` | cost per day, likewise `week` and `month`, optionally with `--since 2026-09-01` |
+| `wiw report project` | cost per project over the whole history, optionally with `--since` |
 | `wiw sync` | read new data, otherwise happens automatically |
 | `wiw sync --rebuild` | re-read existing transcripts, for example after changed parsing rules |
 | `wiw reprice` | recompute every cost with the current price list |
@@ -105,6 +106,16 @@ Your own prices, for example for a model LiteLLM does not know yet, go into `~/.
 ```
 
 Then run `wiw reprice`.
+
+Folders git can no longer resolve, such as deleted worktrees, can be mapped to a project in `~/.config/what-is-worth/projects.json`. Keys are glob patterns for the folder, and subdirectories match too:
+
+```json
+{
+  "~/code/my-app-*": "my-app"
+}
+```
+
+Rules take effect immediately for the whole history. They apply only where git cannot map the folder. They are mostly needed for the time before installation: since then What is Worth? records the mapping while the worktree still exists.
 
 ## How costs are calculated
 
@@ -140,7 +151,7 @@ All amounts are API equivalents at list prices. On a Pro or Max subscription the
 - **Accounts only from installation on.** Transcripts do not contain the account. Costs before the first status line refresh appear as "unattributed".
 - **Account switches without a status line.** If you only use `claude -p` or the IDE after a login, the switch is noticed at the next refresh of a terminal status line.
 - **Declined first attempts.** When a model declines before any output and another one answers, the fallback is priced correctly. Whether the declined attempt costs anything depends on its category, which the transcript does not contain, so it is not counted.
-- **Deleted worktrees.** Worktrees deleted before their first sync cannot be mapped to a repository and appear under their folder name.
+- **Deleted worktrees.** Worktrees deleted before their first sync cannot be mapped to a repository and appear under their folder name, unless a rule in `projects.json` maps them. Deleted subdirectories of a known repository still count towards it.
 - **One machine.** Each machine keeps its own ledger.
 
 ## Structure

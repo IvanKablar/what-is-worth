@@ -30,6 +30,10 @@ class Config:
     def price_overrides_path(self) -> Path:
         return self.config_dir / "prices.json"
 
+    @property
+    def project_rules_path(self) -> Path:
+        return self.config_dir / "projects.json"
+
     def ensure_dirs(self) -> None:
         for path in (self.data_dir, self.config_dir, self.cache_dir):
             path.mkdir(parents=True, exist_ok=True)

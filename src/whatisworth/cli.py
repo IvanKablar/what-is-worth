@@ -7,7 +7,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 
-from . import insights, plans
+from . import insights, plans, projects
 from .config import load_config
 from .format import counted, countdown, date_range, factor, full_date, left, pct, right, usd, weekday_time, width
 from .i18n import localize_argparse, t
@@ -77,14 +77,19 @@ def cmd_report(args, cfg) -> int:
     if args.since:
         since_ms = int(datetime.strptime(args.since, "%Y-%m-%d").timestamp() * 1000)
     rows = ledger.conn.execute(
-        "SELECT ts, model, total, cost_usd, price_status FROM events WHERE ts >= ? ORDER BY ts",
+        "SELECT ts, model, cwd, total, cost_usd, price_status FROM events WHERE ts >= ? ORDER BY ts",
         (since_ms,),
     ).fetchall()
+    repos = ledger.repo_map() if args.period == "project" else {}
+    rules = projects.load_rules(cfg.project_rules_path)
     ledger.close()
     groups: dict[str, list[float]] = {}
     unpriced: dict[str, set[str]] = {}
     for r in rows:
-        label = _period_label(r["ts"], args.period)
+        if args.period == "project":
+            label = projects.label(r["cwd"], projects.known_repo(r["cwd"], repos), rules)
+        else:
+            label = _period_label(r["ts"], args.period)
         g = groups.setdefault(label, [0, 0, 0.0])
         g[0] += 1
         g[1] += r["total"]
@@ -93,11 +98,16 @@ def cmd_report(args, cfg) -> int:
             unpriced.setdefault(label, set()).add(r["model"])
     from .format import count
 
-    print(left(t("col.period"), 24) + right(t("col.responses"), 12) + right(t("col.tokens"), 18)
+    items = list(groups.items())
+    if args.period == "project":
+        items.sort(key=lambda kv: kv[1][2], reverse=True)
+    head = t("col.project") if args.period == "project" else t("col.period")
+    cols = min(max([width(head)] + [width(label) for label, _ in items]), 40) + 2
+    print(left(head, cols) + right(t("col.responses"), 12) + right(t("col.tokens"), 18)
           + right(t("col.usd"), 16))
-    for label, (n, tokens, cost) in groups.items():
+    for label, (n, tokens, cost) in items:
         note = "  " + t("report.unpriced", models=", ".join(sorted(unpriced[label]))) if label in unpriced else ""
-        print(left(label, 24) + right(count(n), 12) + right(count(tokens), 18) + right(usd(cost), 16) + note)
+        print(left(label, cols) + right(count(n), 12) + right(count(tokens), 18) + right(usd(cost), 16) + note)
     return 0
 
 
@@ -112,10 +122,10 @@ def _bar(value: float, maximum: float, size: int = 24) -> str:
     return "█" * filled + "·" * (size - filled)
 
 
-def _print_breakdown(title_key: str, items: list[tuple[str, float]], limit: int) -> None:
+def _print_breakdown(title: str, items: list[tuple[str, float]], limit: int) -> None:
     if not items:
         return
-    print(f"\n{t(title_key)}")
+    print(f"\n{title}")
     shown = items[:limit]
     top = max(v for _, v in shown)
     for name, value in shown:
@@ -272,9 +282,12 @@ def cmd_overview(args, cfg) -> int:
     if totals.unpriced_models:
         _line("unpriced", ", ".join(sorted(totals.unpriced_models)))
 
-    _print_breakdown("section.by_day", insights.breakdown(ledger, source, ranges, "day"), 7)
-    _print_breakdown("section.by_model", insights.breakdown(ledger, source, ranges, "model"), 6)
-    _print_breakdown("section.by_project", insights.breakdown(ledger, source, ranges, "project"), 8)
+    _print_breakdown(t("section.by_day"), insights.breakdown(ledger, source, ranges, "day"), 7)
+    _print_breakdown(t("section.by_model"), insights.breakdown(ledger, source, ranges, "model"), 6)
+    # Projects span accounts, so they cover the whole window including unattributed costs.
+    whole = [(window.start_ms, now_s * 1000 + 1)]
+    _print_breakdown(t("section.by_project_all", since=weekday_time(window.start_s)),
+                     insights.breakdown(ledger, source, whole, "project", projects.load_rules(cfg.project_rules_path)), 10)
     _accounts_table(ledger, source, now_s, account_id)
     _totals_block(ledger, source, now_s)
 
@@ -327,7 +340,7 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_reprice)
 
     p = sub.add_parser("report", help=t("help.report"))
-    p.add_argument("period", choices=["day", "week", "month"], help=t("help.period"))
+    p.add_argument("period", choices=["day", "week", "month", "project"], help=t("help.period"))
     p.add_argument("--since", help=t("help.since"))
     p.set_defaults(func=cmd_report)
 

@@ -259,7 +259,7 @@ def totals(ledger: Ledger, source: str, ranges: list[tuple[int, int]], session: 
 
 
 def breakdown(
-    ledger: Ledger, source: str, ranges: list[tuple[int, int]], by: str
+    ledger: Ledger, source: str, ranges: list[tuple[int, int]], by: str, rules: list[tuple[str, str]] = ()
 ) -> list[tuple[str, float]]:
     """Cost per model, project or local day, largest first (days in order)."""
     clause, params = _where(ranges)
@@ -273,7 +273,7 @@ def breakdown(
         if by == "model":
             key = r["model"]
         elif by == "project":
-            key = projects.label(r["cwd"], repos.get(r["cwd"]))
+            key = projects.label(r["cwd"], projects.known_repo(r["cwd"], repos), rules)
         else:
             key = day_label(r["ts"] / 1000)
         sums[key] = sums.get(key, 0.0) + r["cost_usd"]

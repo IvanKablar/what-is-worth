@@ -8,6 +8,8 @@ ledger, so it survives worktrees that are deleted later.
 
 from __future__ import annotations
 
+import json
+from fnmatch import fnmatchcase
 from pathlib import Path
 
 from .i18n import t
@@ -46,11 +48,39 @@ def _worktree_main(dot_git_file: Path) -> str | None:
     return str(common.parent) if common.name == ".git" else None
 
 
-def label(cwd: str | None, repo: str | None) -> str:
+def load_rules(path: Path) -> list[tuple[str, str]]:
+    """Rules from projects.json, {"glob": "project"}, for folders git can no longer resolve."""
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return []
+    if not isinstance(data, dict):
+        return []
+    return [(str(Path(pattern).expanduser()), str(name)) for pattern, name in data.items()]
+
+
+def known_repo(cwd: str | None, repos: dict[str, str | None]) -> str | None:
+    """Repository of `cwd`, or of its nearest ancestor the ledger has resolved."""
+    if not cwd:
+        return None
+    path = Path(cwd)
+    for directory in (path, *path.parents):
+        if repos.get(str(directory)):
+            return repos[str(directory)]
+        if directory == Path.home():
+            break
+    return None
+
+
+def label(cwd: str | None, repo: str | None, rules: list[tuple[str, str]] = ()) -> str:
     if repo:
         return Path(repo).name
     if not cwd:
         return t("project.unknown")
+    path = Path(cwd)
+    for pattern, name in rules:
+        if any(fnmatchcase(str(directory), pattern) for directory in (path, *path.parents)):
+            return name
     if Path(cwd) == Path.home():
         return t("project.home")
     return Path(cwd).name or cwd

@@ -11,7 +11,7 @@ Hoy se admite Claude Code. Otros agentes se pueden añadir como adaptadores. Tod
 ## Funciones
 
 - **Resumen desde el reinicio semanal** de la cuenta con sesión iniciada: uso, valor API, valor por punto porcentual, ritmo y cuándo se alcanzará el límite.
-- **Desglose** por día, modelo y proyecto. Un proyecto es un repositorio git. Los worktrees y subdirectorios cuentan para su repositorio principal.
+- **Desglose** por día, modelo y proyecto. Un proyecto es un repositorio git. Los worktrees y subdirectorios cuentan para su repositorio principal. Los proyectos abarcan todas las cuentas del periodo.
 - **Todas las cuentas en una tabla**, cada una en su propio periodo semanal con su propia hora de reinicio.
 - **Precio del plan frente al valor API:** el precio de lista de cada plan por semana y un factor: valor API por punto porcentual dividido entre lo que cuesta un punto porcentual en el plan.
 - **Totales de todas las cuentas:** hoy, esta semana, este mes y en total.
@@ -72,6 +72,7 @@ Por defecto, Claude Code borra las transcripciones a los 30 días. Para conserva
 | `wiw` | resumen desde el último reinicio semanal, igual que `wiw overview` |
 | `wiw overview --weeks 10` | resumen con diez semanas anteriores |
 | `wiw report day` | coste por día, también `week` y `month`, opcionalmente con `--since 2026-09-01` |
+| `wiw report project` | coste por proyecto en todo el historial, opcionalmente con `--since` |
 | `wiw sync` | leer datos nuevos; si no, ocurre automáticamente |
 | `wiw sync --rebuild` | volver a leer las transcripciones existentes, por ejemplo tras cambiar las reglas de lectura |
 | `wiw reprice` | recalcular todos los costes con la lista de precios actual |
@@ -105,6 +106,16 @@ Los precios propios, por ejemplo para un modelo que LiteLLM aún no conoce, van 
 ```
 
 Después, ejecuta `wiw reprice`.
+
+Las carpetas que git ya no puede resolver, como worktrees borrados, se pueden asignar a un proyecto en `~/.config/what-is-worth/projects.json`. Las claves son patrones glob para la carpeta, y también cubren sus subdirectorios:
+
+```json
+{
+  "~/code/my-app-*": "my-app"
+}
+```
+
+Las reglas se aplican de inmediato a todo el historial. Solo actúan cuando git no puede asignar la carpeta. Casi solo hacen falta para el periodo anterior a la instalación: desde entonces What is Worth? guarda la asignación mientras el worktree todavía existe.
 
 ## Cómo se calcula
 
@@ -140,7 +151,7 @@ Todos los importes son equivalentes de API a precio de lista. Con una suscripci�
 - **Cuentas solo desde la instalación.** Las transcripciones no contienen la cuenta. Los costes anteriores a la primera actualización de la línea de estado aparecen como «no atribuibles».
 - **Cambios de cuenta sin línea de estado.** Si tras un inicio de sesión solo usas `claude -p` o el IDE, el cambio se detecta en la siguiente actualización de una línea de estado en terminal.
 - **Primeros intentos rechazados.** Cuando un modelo rechaza antes de producir salida y responde otro, la alternativa se valora correctamente. Si el intento rechazado cuesta algo depende de su categoría, que no figura en la transcripción, así que no se cuenta.
-- **Worktrees borrados.** Los worktrees borrados antes de su primera lectura no se pueden asignar a un repositorio y aparecen con el nombre de su carpeta.
+- **Worktrees borrados.** Los worktrees borrados antes de su primera lectura no se pueden asignar a un repositorio y aparecen con el nombre de su carpeta. Una regla en `projects.json` puede asignarlos. Los subdirectorios borrados de un repositorio conocido siguen contando para él.
 - **Un solo equipo.** Cada equipo lleva su propio registro.
 
 ## Estructura
